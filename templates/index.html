@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurnGuard — Customer Churn Prediction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="page">
+
+    <header class="hero">
+        <span class="badge">Beginner ML Project</span>
+        <h1>ChurnGuard</h1>
+        <p>
+            Predict whether a telecom customer is likely to leave.
+            Fill in customer details below and our machine learning model
+            will estimate churn risk in seconds.
+        </p>
+        <div class="stats-row">
+            <div class="stat-card">
+                <strong>19</strong>
+                <span>Input Features</span>
+            </div>
+            <div class="stat-card">
+                <strong>Random Forest</strong>
+                <span>ML Algorithm</span>
+            </div>
+            {% if model_accuracy %}
+            <div class="stat-card">
+                <strong>{{ model_accuracy }}%</strong>
+                <span>Model Accuracy</span>
+            </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="layout">
+
+        <main class="card">
+            <h2>Customer Details</h2>
+            <p class="subtitle">Enter information about the customer to run a churn prediction.</p>
+
+            {% if error %}
+            <div class="error-banner">{{ error }}</div>
+            {% endif %}
+
+            <form id="churn-form" action="/predict" method="POST">
+
+                <section class="form-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">👤</span>
+                        Profile
+                    </h3>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" required>
+                                {% for option in field_options.gender %}
+                                <option value="{{ option }}" {% if form_data and form_data.gender == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="SeniorCitizen">Senior Citizen</label>
+                            <select id="SeniorCitizen" name="SeniorCitizen" required>
+                                <option value="0" {% if form_data and form_data.SeniorCitizen == '0' %}selected{% endif %}>No</option>
+                                <option value="1" {% if form_data and form_data.SeniorCitizen == '1' %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="Partner">Partner</label>
+                            <select id="Partner" name="Partner" required>
+                                {% for option in field_options.Partner %}
+                                <option value="{{ option }}" {% if form_data and form_data.Partner == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="Dependents">Dependents</label>
+                            <select id="Dependents" name="Dependents" required>
+                                {% for option in field_options.Dependents %}
+                                <option value="{{ option }}" {% if form_data and form_data.Dependents == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="tenure">Tenure (months)</label>
+                            <span class="hint">How long the customer has stayed with the company</span>
+                            <input type="number" id="tenure" name="tenure" min="0" max="100" placeholder="e.g. 12" value="{{ form_data.tenure if form_data else '' }}" required>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📡</span>
+                        Services
+                    </h3>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="PhoneService">Phone Service</label>
+                            <select id="PhoneService" name="PhoneService" required>
+                                {% for option in field_options.PhoneService %}
+                                <option value="{{ option }}" {% if form_data and form_data.PhoneService == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="MultipleLines">Multiple Lines</label>
+                            <select id="MultipleLines" name="MultipleLines" required>
+                                {% for option in field_options.MultipleLines %}
+                                <option value="{{ option }}" {% if form_data and form_data.MultipleLines == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="InternetService">Internet Service</label>
+                            <select id="InternetService" name="InternetService" required>
+                                {% for option in field_options.InternetService %}
+                                <option value="{{ option }}" {% if form_data and form_data.InternetService == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="OnlineSecurity">Online Security</label>
+                            <select id="OnlineSecurity" name="OnlineSecurity" required>
+                                {% for option in field_options.OnlineSecurity %}
+                                <option value="{{ option }}" {% if form_data and form_data.OnlineSecurity == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="OnlineBackup">Online Backup</label>
+                            <select id="OnlineBackup" name="OnlineBackup" required>
+                                {% for option in field_options.OnlineBackup %}
+                                <option value="{{ option }}" {% if form_data and form_data.OnlineBackup == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="DeviceProtection">Device Protection</label>
+                            <select id="DeviceProtection" name="DeviceProtection" required>
+                                {% for option in field_options.DeviceProtection %}
+                                <option value="{{ option }}" {% if form_data and form_data.DeviceProtection == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="TechSupport">Tech Support</label>
+                            <select id="TechSupport" name="TechSupport" required>
+                                {% for option in field_options.TechSupport %}
+                                <option value="{{ option }}" {% if form_data and form_data.TechSupport == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="StreamingTV">Streaming TV</label>
+                            <select id="StreamingTV" name="StreamingTV" required>
+                                {% for option in field_options.StreamingTV %}
+                                <option value="{{ option }}" {% if form_data and form_data.StreamingTV == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="StreamingMovies">Streaming Movies</label>
+                            <select id="StreamingMovies" name="StreamingMovies" required>
+                                {% for option in field_options.StreamingMovies %}
+                                <option value="{{ option }}" {% if form_data and form_data.StreamingMovies == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">💳</span>
+                        Billing & Contract
+                    </h3>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="Contract">Contract Type</label>
+                            <select id="Contract" name="Contract" required>
+                                {% for option in field_options.Contract %}
+                                <option value="{{ option }}" {% if form_data and form_data.Contract == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="PaperlessBilling">Paperless Billing</label>
+                            <select id="PaperlessBilling" name="PaperlessBilling" required>
+                                {% for option in field_options.PaperlessBilling %}
+                                <option value="{{ option }}" {% if form_data and form_data.PaperlessBilling == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="PaymentMethod">Payment Method</label>
+                            <select id="PaymentMethod" name="PaymentMethod" required>
+                                {% for option in field_options.PaymentMethod %}
+                                <option value="{{ option }}" {% if form_data and form_data.PaymentMethod == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="MonthlyCharges">Monthly Charges ($)</label>
+                            <input type="number" id="MonthlyCharges" name="MonthlyCharges" min="0" step="0.01" placeholder="e.g. 70.35" value="{{ form_data.MonthlyCharges if form_data else '' }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="TotalCharges">Total Charges ($)</label>
+                            <span class="hint">Total amount paid so far</span>
+                            <input type="number" id="TotalCharges" name="TotalCharges" min="0" step="0.01" placeholder="e.g. 1500.00" value="{{ form_data.TotalCharges if form_data else '' }}" required>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="actions">
+                    <button type="button" id="sample-btn" class="btn btn-secondary">Load Sample Customer</button>
+                    <button type="submit" id="predict-btn" class="btn btn-primary">Predict Churn Risk</button>
+                </div>
+            </form>
+        </main>
+
+        <aside class="sidebar">
+            <div class="card">
+                <h2>Prediction Result</h2>
+                <p class="subtitle">Risk assessment from the trained model</p>
+
+                {% if prediction %}
+                <div class="result-card {{ risk_level }}">
+                    <p class="result-status">{{ prediction }}</p>
+                    <p class="result-message">
+                        {% if will_churn %}
+                        This customer shows signs of leaving. Consider a retention offer or support outreach.
+                        {% else %}
+                        This customer looks likely to stay. Continue standard engagement.
+                        {% endif %}
+                    </p>
+                    <div class="probability-wrap">
+                        <div class="probability-label">
+                            <span>Churn Probability</span>
+                            <span>{{ churn_probability }}%</span>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-fill {{ risk_level }}" style="width: {{ churn_probability }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="result-placeholder">
+                    <div class="icon">📊</div>
+                    <p>Submit the form to see whether this customer is likely to churn and how confident the model is.</p>
+                </div>
+                {% endif %}
+
+                <div class="tips">
+                    <h3>What is churn?</h3>
+                    <ul>
+                        <li>Churn means a customer stops using your service.</li>
+                        <li>Month-to-month contracts and electronic check payments often increase risk.</li>
+                        <li>Longer tenure and two-year contracts usually lower churn risk.</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <footer class="footer">
+        Built with Flask + scikit-learn · Telco Customer Churn dataset
+    </footer>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

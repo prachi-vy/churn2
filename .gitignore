@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+model/
+customer_churn.csv
+*.pyc
+*.pkl
+*.joblib
+.DS_Store
